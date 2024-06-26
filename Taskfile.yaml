@@ -101,6 +101,12 @@ tasks:
     - sh: aws-vault --version
       msg: ✗ aws-vault not installed failed. Run 'brew install aws-vault' to install aws-vault
 
+  update-submodules:
+    desc: Updates Git submodules on the repository
+    cmds:
+    - git submodule update --init --recursive
+    - git submodule update --remote --recursive
+
   #########################
   ####### UTIL TASKS ######
   #########################
