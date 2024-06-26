@@ -1,0 +1,158 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+run: once # by default, each task will only run once. This can be overridden at the task level
+output: prefixed
+
+tasks:
+  #########################
+  ####### MAIN TASKS ######
+  #########################
+  tofu-ready:
+    desc: Runs OpenTofu validations to ensure configuration is healthy
+    cmds:
+    - task: tofu-checks
+    - task: tofu-tflint
+    - task: tofu-trivy
+
+  tofu-checks:
+    desc: Runs OpenTofu fmt and validate
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} fmt -recursive
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} validate
+    deps:
+    - tofu-init-offline
+
+  tofu-trivy:
+    desc: Run Trivy security scan
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+      - TRIVY_CONFIG_FILE
+    cmds:
+    - trivy fs {{.TOFU_CONFIGURATION_DIRECTORY}} --config {{.USER_WORKING_DIR}}/{{.TRIVY_CONFIG_FILE}}
+    status:
+    - "[ ! -f {{.USER_WORKING_DIR}}/{{.TRIVY_CONFIG_FILE}} ]" # skip if trivy config file does not exist
+
+  tofu-tflint:
+    desc: Run TFLint
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+      - TFLINT_CONFIG_FILE
+    cmds:
+    - tflint --recursive --init --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
+    - tflint --recursive --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
+    status:
+    - "[ ! -f {{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}} ]" # skip if TFLint config file does not exist
+    deps:
+    - tofu-init-offline
+
+  tofu-plan:
+    desc: Run OpenTofu plan
+    deps:
+    - tofu-select-workspace
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+      - TOFU_INPUTS_FILE
+      - AWS_PROFILE
+    env:
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}}
+
+  tofu-apply:
+    desc: Run OpenTofu apply
+    deps:
+    - tofu-select-workspace
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+      - TOFU_INPUTS_FILE
+      - AWS_PROFILE
+    env:
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} apply -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}} -auto-approve
+
+  tofu-clean:
+    desc: Cleans the OpenTofu local environment
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+    cmds:
+    - rm -rf {{.TOFU_CONFIGURATION_DIRECTORY}}/.terraform
+    - rm -rf {{.TOFU_CONFIGURATION_DIRECTORY}}/terraform.tfstate.d
+
+  requirements:
+    desc: Installs the requirements for the local development environment
+    preconditions:
+    - sh: tofu version
+      msg: ✗ OpenTofu is not installed failed. Run 'brew install opentofu' to install OpenTofu
+    - sh: trivy --version
+      msg: ✗ Trivy not installed failed. Run 'brew install trivy' to install Trivy
+    - sh: tflint --version
+      msg: ✗ tflint not installed failed. Run 'brew install tflint' to install tflint
+    - sh: checkov --version
+      msg: ✗ checkov not installed failed. Run 'brew install checkov' to install checkov
+    - sh: aws-vault --version
+      msg: ✗ aws-vault not installed failed. Run 'brew install aws-vault' to install aws-vault
+
+  #########################
+  ####### UTIL TASKS ######
+  #########################
+  tofu-init-offline:
+    desc: Initializes (offline) the OpenTofu environment
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} init -input=false -upgrade -backend=false
+    internal: true
+
+  tofu-init:
+    desc: Initializes the OpenTofu environment
+    requires:
+      vars:
+      - TOFU_CONFIGURATION_DIRECTORY
+      - AWS_PROFILE
+    env:
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} init -input=false -upgrade -reconfigure
+    internal: true
+
+  tofu-select-workspace:
+    desc: Selects the OpenTofu workspace
+    deps:
+    - tofu-create-workspace
+    requires:
+      vars:
+      - TOFU_WORKSPACE
+      - AWS_PROFILE
+      - TOFU_CONFIGURATION_DIRECTORY
+    env:
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace select {{.TOFU_WORKSPACE}}
+    internal: true
+
+  tofu-create-workspace:
+    desc: Creates the OpenTofu workspace
+    deps:
+    - tofu-init
+    requires:
+      vars:
+      - TOFU_WORKSPACE
+      - AWS_PROFILE
+      - TOFU_CONFIGURATION_DIRECTORY
+    env:
+      AWS_PROFILE: "{{.AWS_PROFILE}}"
+    cmds:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace new {{.TOFU_WORKSPACE}}
+    status:
+    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace select {{.TOFU_WORKSPACE}}
+    internal: true
