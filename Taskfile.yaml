@@ -62,7 +62,7 @@ tasks:
     env:
       AWS_PROFILE: "{{.AWS_PROFILE}}"
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}}
+    - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}}
 
   tofu-apply:
     desc: Run OpenTofu apply
@@ -76,7 +76,7 @@ tasks:
     env:
       AWS_PROFILE: "{{.AWS_PROFILE}}"
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} apply -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}} -auto-approve
+    - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} apply -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}} -auto-approve
 
   tofu-clean:
     desc: Cleans the OpenTofu local environment
