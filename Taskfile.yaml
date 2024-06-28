@@ -33,8 +33,7 @@ tasks:
       - TRIVY_CONFIG_FILE
     cmds:
     - trivy fs {{.TOFU_CONFIGURATION_DIRECTORY}} --config {{.USER_WORKING_DIR}}/{{.TRIVY_CONFIG_FILE}}
-    status:
-    - "[ ! -f {{.USER_WORKING_DIR}}/{{.TRIVY_CONFIG_FILE}} ]" # skip if trivy config file does not exist
+    status: ["[[ '{{.SKIP_TRIVY_SCAN}}' == 'true' ]]"]
 
   tofu-tflint:
     desc: Run TFLint
@@ -45,8 +44,7 @@ tasks:
     cmds:
     - tflint --recursive --init --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
     - tflint --recursive --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
-    status:
-    - "[ ! -f {{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}} ]" # skip if TFLint config file does not exist
+    status: ["[ '{{.SKIP_TFLINT}}' == 'true' ]"]
     deps:
     - tofu-init-offline
 
