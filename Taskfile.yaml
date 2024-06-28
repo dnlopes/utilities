@@ -58,9 +58,6 @@ tasks:
       vars:
       - TOFU_CONFIGURATION_DIRECTORY
       - TOFU_INPUTS_FILE
-      - TOFU_AWS_PROFILE
-    env:
-      AWS_PROFILE: "{{.TOFU_AWS_PROFILE}}"
     cmds:
     - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}}
 
@@ -72,9 +69,6 @@ tasks:
       vars:
       - TOFU_CONFIGURATION_DIRECTORY
       - TOFU_INPUTS_FILE
-      - TOFU_AWS_PROFILE
-    env:
-      AWS_PROFILE: "{{.TOFU_AWS_PROFILE}}"
     cmds:
     - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} apply -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}} -auto-approve
 
@@ -124,9 +118,6 @@ tasks:
     requires:
       vars:
       - TOFU_CONFIGURATION_DIRECTORY
-      - TOFU_AWS_PROFILE
-    env:
-      AWS_PROFILE: "{{.TOFU_AWS_PROFILE}}"
     cmds:
     - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} init -input=false -upgrade -reconfigure
     internal: true
@@ -138,10 +129,7 @@ tasks:
     requires:
       vars:
       - TOFU_WORKSPACE
-      - TOFU_AWS_PROFILE
       - TOFU_CONFIGURATION_DIRECTORY
-    env:
-      AWS_PROFILE: "{{.TOFU_AWS_PROFILE}}"
     cmds:
     - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace select {{.TOFU_WORKSPACE}}
     internal: true
@@ -153,10 +141,7 @@ tasks:
     requires:
       vars:
       - TOFU_WORKSPACE
-      - TOFU_AWS_PROFILE
       - TOFU_CONFIGURATION_DIRECTORY
-    env:
-      AWS_PROFILE: "{{.TOFU_AWS_PROFILE}}"
     cmds:
     - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace new {{.TOFU_WORKSPACE}}
     status:
