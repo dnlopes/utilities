@@ -114,7 +114,7 @@ tasks:
       GO111MODULE: on
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}})
+    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}} .)
 
   go-build:
     desc: Builds the Go project
@@ -129,7 +129,7 @@ tasks:
       GO111MODULE: on
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}})
+    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}} .)
 
   #########################
   ####### UTIL TASKS ######
