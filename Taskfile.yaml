@@ -105,7 +105,6 @@ tasks:
       vars:
       - GO_PROJECT_DIR
       - GO_OUTPUT_FILE
-      - OUTPUT_FILE_ZIPNAME
     env:
       LDFLAGS: "-s -w -X main.buildDateTime=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.githash=`git rev-parse HEAD`"
       CGO_ENABLED: 0
@@ -114,7 +113,7 @@ tasks:
       GO111MODULE: on
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}} .)
+    - cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip .
 
   go-build:
     desc: Builds the Go project
@@ -122,14 +121,13 @@ tasks:
       vars:
       - GO_PROJECT_DIR
       - GO_OUTPUT_FILE
-      - OUTPUT_FILE_ZIPNAME
     env:
       LDFLAGS: "-s -w -X main.buildDateTime=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.githash=`git rev-parse HEAD`"
       CGO_ENABLED: 0
       GO111MODULE: on
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - (cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.OUTPUT_FILE_ZIPNAME}} .)
+    - cd $(dirname "{{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}") && zip -r {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip .
 
   #########################
   ####### UTIL TASKS ######
