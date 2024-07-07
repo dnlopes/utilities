@@ -112,7 +112,7 @@ tasks:
       GOARCH: amd64
       GO111MODULE: on
     cmds:
-    - go build -ldflags="$(LDFLAGS)" -o {{.GO_OUTPUT_FILE}} {{.GO_PROJECT_DIR}}/main.go
+    - go build -C {{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.GO_OUTPUT_FILE}}
 
   #########################
   ####### UTIL TASKS ######
