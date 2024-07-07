@@ -129,7 +129,7 @@ tasks:
       GO111MODULE: on
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -ldflags="$(LDFLAGS)" -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - zip {{.OUTPUT_FILE_ZIPNAME}} {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+    - zip -D {{.OUTPUT_FILE_ZIPNAME}} {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
 
   #########################
   ####### UTIL TASKS ######
