@@ -99,6 +99,21 @@ tasks:
     - git submodule update --init --recursive
     - git submodule update --remote --recursive
 
+  go-build-for-aws-lambda:
+    desc: Builds the Go project
+    requires:
+      vars:
+      - PROJECT_DIR
+      - OUTPUT_FILE
+    env:
+      LDFLAGS: "-s -w -X main.buildDateTime=`date -u '+%Y-%m-%d_%I:%M:%S%p'` -X main.githash=`git rev-parse HEAD`"
+      CGO_ENABLED: 0
+      GOOS: linux
+      GOARCH: amd64
+      GO111MODULE: on
+    cmds:
+    - go build -ldflags="$(LDFLAGS)" -o {{.OUTPUT_FILE}} {{.PROJECT_DIR}}/main.go
+
   #########################
   ####### UTIL TASKS ######
   #########################
