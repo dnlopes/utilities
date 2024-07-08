@@ -99,6 +99,36 @@ tasks:
     - git submodule update --init --recursive
     - git submodule update --remote --recursive
 
+  go-build-for-aws-lambda:
+    desc: Builds the Go project
+    requires:
+      vars:
+      - GO_PROJECT_DIR
+      - GO_OUTPUT_FILE
+    env:
+      CGO_ENABLED: 0
+      GOOS: linux
+      GOARCH: amd64
+      GO111MODULE: on
+    cmds:
+    - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+    - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
+    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+
+  go-build:
+    desc: Builds the Go project
+    requires:
+      vars:
+      - GO_PROJECT_DIR
+      - GO_OUTPUT_FILE
+    env:
+      CGO_ENABLED: 0
+      GO111MODULE: on
+    cmds:
+    - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+    - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
+    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+
   #########################
   ####### UTIL TASKS ######
   #########################
