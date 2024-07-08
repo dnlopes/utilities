@@ -113,7 +113,7 @@ tasks:
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
     - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
-    - zip -r {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
 
   go-build:
     desc: Builds the Go project
@@ -127,7 +127,7 @@ tasks:
     cmds:
     - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
     - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
-    - zip -r {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
 
   #########################
   ####### UTIL TASKS ######
