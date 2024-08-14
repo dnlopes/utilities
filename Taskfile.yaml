@@ -7,171 +7,173 @@ tasks:
   #########################
   ####### MAIN TASKS ######
   #########################
-  tofu-ready:
-    desc: Runs OpenTofu validations to ensure configuration is healthy
+  tf-ready:
+    desc: Runs Terraform validations to ensure configuration is healthy
     cmds:
-    - task: tofu-checks
-    - task: tofu-tflint
-    - task: tofu-trivy
+      - task: tf-checks
+      - task: tflint
 
-  tofu-checks:
-    desc: Runs OpenTofu fmt and validate
+  tf-checks:
+    desc: Runs Terraform fmt and validate
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} fmt -recursive
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} validate
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} fmt -recursive"
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} validate"
     deps:
-    - tofu-init-offline
+      - tf-init-offline
 
-  tofu-trivy:
-    desc: Run Trivy security scan
-    requires:
-      vars:
-      - TOFU_CONFIGURATION_DIRECTORY
-      - TRIVY_CONFIG_FILE
-    cmds:
-    - trivy fs {{.TOFU_CONFIGURATION_DIRECTORY}} --config {{.USER_WORKING_DIR}}/{{.TRIVY_CONFIG_FILE}}
-    status: ["[[ '{{.SKIP_TRIVY_SCAN}}' == 'true' ]]"]
-
-  tofu-tflint:
+  tflint:
     desc: Run TFLint
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
-      - TFLINT_CONFIG_FILE
+        - TF_CONFIGURATION_DIRECTORY
+        - TFLINT_CONFIG_FILE
     cmds:
-    - tflint --recursive --init --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
-    - tflint --recursive --config={{.USER_WORKING_DIR}}/{{.TFLINT_CONFIG_FILE}}
+      - tflint --recursive --init --config={{.TFLINT_CONFIG_FILE}}
+      - tflint --recursive --config={{.TFLINT_CONFIG_FILE}}
     status: ["[ '{{.SKIP_TFLINT}}' == 'true' ]"]
     deps:
-    - tofu-init-offline
+      - tf-init-offline
 
-  tofu-plan:
-    desc: Run OpenTofu plan
+  tf-plan:
+    desc: Run Terraform plan
     deps:
-    - tofu-select-workspace
+      - tf-select-workspace
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
-      - TOFU_INPUTS_FILE
+        - TF_CONFIGURATION_DIRECTORY
+        - TF_INPUTS_FILE
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}}
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} plan -lock=false -var-file={{.TF_INPUTS_FILE}}"
 
-  tofu-apply:
-    desc: Run OpenTofu apply
+  tf-apply:
+    desc: Run Terraform apply
     deps:
-    - tofu-select-workspace
+      - tf-select-workspace
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
-      - TOFU_INPUTS_FILE
+        - TF_CONFIGURATION_DIRECTORY
+        - TF_INPUTS_FILE
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.USER_WORKING_DIR}}/{{.TOFU_CONFIGURATION_DIRECTORY}} apply -var-file={{.USER_WORKING_DIR}}/{{.TOFU_INPUTS_FILE}} -auto-approve
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} apply -var-file={{.TF_INPUTS_FILE}} -auto-approve"
 
-  tofu-clean:
-    desc: Cleans the OpenTofu local environment
+  tf-clean:
+    desc: Cleans the Terraform local environment
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_CONFIGURATION_DIRECTORY
     cmds:
-    - rm -rf {{.TOFU_CONFIGURATION_DIRECTORY}}/.terraform
-    - rm -rf {{.TOFU_CONFIGURATION_DIRECTORY}}/terraform.tfstate.d
+      - rm -rf {{.TF_CONFIGURATION_DIRECTORY}}/.terraform
+      - rm -rf {{.TF_CONFIGURATION_DIRECTORY}}/terraform.tfstate.d
+
+  tf-lock:
+    desc: (re)generates the .terraform.lock.hcl file
+    requires:
+      vars:
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
+    cmds:
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} providers lock \
+        -platform=windows_amd64 -platform=darwin_amd64 -platform=linux_amd64 -platform=linux_arm64"
 
   requirements:
     desc: Installs the requirements for the local development environment
     preconditions:
-    - sh: tofu version
-      msg: ✗ OpenTofu is not installed failed. Run 'brew install opentofu' to install OpenTofu
-    - sh: trivy --version
-      msg: ✗ Trivy not installed failed. Run 'brew install trivy' to install Trivy
-    - sh: tflint --version
-      msg: ✗ tflint not installed failed. Run 'brew install tflint' to install tflint
-    - sh: checkov --version
-      msg: ✗ checkov not installed failed. Run 'brew install checkov' to install checkov
-    - sh: aws-vault --version
-      msg: ✗ aws-vault not installed failed. Run 'brew install aws-vault' to install aws-vault
+      - sh: tflint --version
+        msg: ✗ tflint not installed failed. Run 'brew install tflint' to install tflint
+      - sh: checkov --version
+        msg: ✗ checkov not installed failed. Run 'brew install checkov' to install checkov
+      - sh: aws-vault --version
+        msg: ✗ aws-vault not installed failed. Run 'brew install aws-vault' to install aws-vault
 
   update-submodules:
     desc: Updates Git submodules on the repository
     cmds:
-    - git submodule update --init --recursive
-    - git submodule update --remote --recursive
+      - git submodule update --init --recursive
+      - git submodule update --remote --recursive
 
   go-build-for-aws-lambda:
     desc: Builds the Go project
     requires:
       vars:
-      - GO_PROJECT_DIR
-      - GO_OUTPUT_FILE
+        - GO_PROJECT_DIR
+        - GO_OUTPUT_FILE
     env:
       CGO_ENABLED: 0
       GOOS: linux
       GOARCH: amd64
       GO111MODULE: on
     cmds:
-    - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
-    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+      - go build -C {{.GO_PROJECT_DIR}} -o {{.GO_OUTPUT_FILE}}
+      - rm -rf {{.GO_OUTPUT_FILE}}.zip
+      - zip -j {{.GO_OUTPUT_FILE}}.zip {{.GO_OUTPUT_FILE}}
 
   go-build:
     desc: Builds the Go project
     requires:
       vars:
-      - GO_PROJECT_DIR
-      - GO_OUTPUT_FILE
+        - GO_PROJECT_DIR
+        - GO_OUTPUT_FILE
     env:
       CGO_ENABLED: 0
       GO111MODULE: on
     cmds:
-    - go build -C {{.USER_WORKING_DIR}}/{{.GO_PROJECT_DIR}} -o {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
-    - rm -rf {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip
-    - zip -j {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}.zip {{.USER_WORKING_DIR}}/{{.GO_OUTPUT_FILE}}
+      - go build -C {{.GO_PROJECT_DIR}} -o {{.GO_OUTPUT_FILE}}
+      - rm -rf {{.GO_OUTPUT_FILE}}.zip
+      - zip -j {{.GO_OUTPUT_FILE}}.zip {{.GO_OUTPUT_FILE}}
 
   #########################
   ####### UTIL TASKS ######
   #########################
-  tofu-init-offline:
-    desc: Initializes (offline) the OpenTofu environment
+  tf-init-offline:
+    desc: Initializes (offline) the Terraform environment
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} init -input=false -upgrade -backend=false
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} init -input=false -backend=false"
     internal: true
 
-  tofu-init:
-    desc: Initializes the OpenTofu environment
+  tf-init:
+    desc: Initializes the Terraform environment
     requires:
       vars:
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} init -input=false -upgrade -reconfigure
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} init -input=false"
     internal: true
 
-  tofu-select-workspace:
-    desc: Selects the OpenTofu workspace
+  tf-select-workspace:
+    desc: Selects the Terraform workspace
     deps:
-    - tofu-create-workspace
+      - tf-create-workspace
     requires:
       vars:
-      - TOFU_WORKSPACE
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_WORKSPACE
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace select {{.TOFU_WORKSPACE}}
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} workspace select {{.TF_WORKSPACE}}"
     internal: true
 
-  tofu-create-workspace:
-    desc: Creates the OpenTofu workspace
+  tf-create-workspace:
+    desc: Creates the Terraform workspace
     deps:
-    - tofu-init
+      - tf-init
     requires:
       vars:
-      - TOFU_WORKSPACE
-      - TOFU_CONFIGURATION_DIRECTORY
+        - TF_WORKSPACE
+        - TF_CONFIGURATION_DIRECTORY
+        - BINARY_NAME
     cmds:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace new {{.TOFU_WORKSPACE}}
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} workspace new {{.TF_WORKSPACE}}"
     status:
-    - tofu -chdir={{.TOFU_CONFIGURATION_DIRECTORY}} workspace select {{.TOFU_WORKSPACE}}
+      - "{{.BINARY_NAME}} -chdir={{.TF_CONFIGURATION_DIRECTORY}} workspace select {{.TF_WORKSPACE}}"
     internal: true
